@@ -23,6 +23,7 @@
 
 package com.sun.jna.platform.win32.COM.office;
 
+import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
 import com.sun.jna.platform.win32.COM.COMException;
@@ -34,12 +35,18 @@ import java.io.File;
 import java.io.IOException;
 
 public class MSOfficeDemo {
+    public static final int SHEET_WIDTH = 10;
+    public static final int SHEET_DEPTH = 12;
+
     public static void main(String[] args) throws IOException {
         Ole32.INSTANCE.CoInitializeEx(Pointer.NULL, Ole32.COINIT_MULTITHREADED);
         try {
             MSOfficeDemo demo = new MSOfficeDemo();
-            demo.testMSExcel();
-            demo.testMSWord();
+            demo.testMSExcel(args[0]);
+        } catch (Exception e) {
+            e.printStackTrace();
+            int lastError = Native.getLastError();
+            System.err.println("Last Error: "+lastError);
         } finally {
             Ole32.INSTANCE.CoUninitialize();
         }
@@ -118,7 +125,7 @@ public class MSOfficeDemo {
         }
     }
 
-    public void testMSExcel() throws IOException {
+    public void testMSExcel(String filename) throws IOException {
         File demoDocument = null;
         MSExcel msExcel = null;
 
@@ -126,24 +133,38 @@ public class MSOfficeDemo {
             msExcel = new MSExcel();
             System.out.println("MSExcel version: " + msExcel.getVersion());
             msExcel.setVisible(true);
+            msExcel.disableAskUpdateLinks();
 
-            Helper.sleep(5);
+            MSExcel.Application application = msExcel.getApplication();
 
             demoDocument = Helper.createNotExistingFile("jnatest", ".xls");
             Helper.extractClasspathFileToReal("/com/sun/jna/platform/win32/COM/util/office/resources/jnatest.xls", demoDocument);
 
-            msExcel.openExcelBook(demoDocument.getAbsolutePath());
-            msExcel.insertValue("A1", "Hello from JNA!");
-            // wait 10sec. before closing
-            Helper.sleep(10);
-            // close and save the active sheet
-            msExcel.closeActiveWorkbook(true);
+            msExcel.openExcelBook(filename);
+            MSExcel.Workbook workbook = msExcel.getActiveWorkbook();
 
-            msExcel.newExcelBook();
-            msExcel.insertValue("A1", "Hello from JNA!");
-            // close and save the active sheet
+            MSExcel.Sheets sheets = workbook.getSheets();
+            System.out.println("Sheets: "+sheets.size());
+            System.out.println("Workbooks: "+msExcel.getWorkbooks().count());
+
+            // SHEETS ARE ONE BASED!!!
+            for (int sheetIndex = 1; sheetIndex <= sheets.size(); sheetIndex++) {
+                MSExcel.Sheet sheet = sheets.getSheet(sheetIndex);
+                System.out.println("Looking at sheet "+sheet.name());
+                MSExcel.Range cells = sheet.cells();
+                for (int rowNum = 0; rowNum < SHEET_DEPTH; rowNum++) {
+                    for (int columnNum = 0; columnNum < SHEET_WIDTH; columnNum++) {
+                        String cellIdentifier = MSExcel.columnNumberStr(columnNum) + (rowNum+1);
+                        MSExcel.Range cell = cells.getRange(cellIdentifier);
+                        System.out.println("["+cellIdentifier+"] "+cell.value());
+                    }
+                }
+            }
+
+            Helper.waitForEnter();
             msExcel.closeActiveWorkbook(true);
         } finally {
+            // close and save the active sheet
             if (msExcel != null) {
                 msExcel.quit();
             }

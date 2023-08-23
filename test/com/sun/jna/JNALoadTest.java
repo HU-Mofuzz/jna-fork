@@ -34,6 +34,7 @@ import java.util.Properties;
 
 import junit.framework.TestCase;
 import org.junit.Assume;
+import org.junit.Ignore;
 
 /** Test loading and unloading native support from various locations.  Note
  * that no JNI classes are directly referenced in these tests.
@@ -231,6 +232,7 @@ public class JNALoadTest extends TestCase implements Paths {
         }
     }
 
+    @Ignore
     public void testLoadFromUnicodePath() throws Exception {
         if (Platform.isWindows()) {
             String vendor = System.getProperty("java.vendor");

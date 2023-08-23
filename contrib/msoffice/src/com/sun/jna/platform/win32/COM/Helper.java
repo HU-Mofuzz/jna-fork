@@ -23,12 +23,20 @@
 
 package com.sun.jna.platform.win32.COM;
 
+import com.sun.jna.platform.unix.X11;
+import com.sun.jna.platform.win32.OaIdl;
+import com.sun.jna.platform.win32.Variant;
+import com.sun.jna.platform.win32.WTypes;
+import com.sun.jna.platform.win32.WinDef;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.text.DateFormat;
+import java.util.Date;
 
 public class Helper {
     public static final File tempDir = new File(System.getProperty("java.io.tmpdir"));
@@ -44,6 +52,13 @@ public class Helper {
         } catch (InterruptedException ex) {
             // Ignore
         }
+    }
+
+    public static void waitForEnter() {
+        System.out.println("Press enter to continue...");
+        try {
+            System.in.read();
+        } catch (Exception ignored){}
     }
 
     /**
@@ -93,5 +108,53 @@ public class Helper {
         File tempFile = Files.createTempFile(prefix, suffix).toFile();
         tempFile.delete();
         return tempFile;
+    }
+
+    public static String errorToString(WinDef.SCODE errorValue) {
+        switch (errorValue.intValue()) {
+            case -2146826281:
+                return "Error: #DIV/0!";
+            case -2146826246:
+                return "Error: #N/A";
+            case -2146826245:
+                return "Error: #GETTING_DATA";
+            case -2146826259:
+                return "Error: #NAME?";
+            case -2146826288:
+                return "Error: #NULL!";
+            case -2146826252:
+                return "Error: #NUM!";
+            case -2146826265:
+                return "Error: #REF!";
+            case -2146826273:
+                return "Error: #VALUE!";
+            default:
+                return "Error: Unknown";
+        }
+    }
+
+    public static String variantToString(Variant.VARIANT variant) {
+        Object value = variant.getValue();
+        if(value == null) {
+            return "";
+        }
+        if(value instanceof Boolean) {
+            return Boolean.toString((Boolean) value);
+        } else if(value instanceof Double) {
+            return Double.toString((Double) value);
+        } else if(value instanceof String) {
+            return (String) value;
+        } else if (value instanceof Integer) {
+            return Integer.toString((Integer) value);
+        } else if(value instanceof Date) {
+            return DateFormat.getInstance().format((Date) value);
+        } else if(value instanceof WTypes.BSTR) {
+            return ((WTypes.BSTR)value).getValue();
+        } else if(value instanceof OaIdl.VARIANT_BOOL) {
+            return Boolean.toString(((OaIdl.VARIANT_BOOL)value).booleanValue());
+        } else if(value instanceof WinDef.SCODE) {
+            return errorToString((WinDef.SCODE)value);
+        }
+        return "<UNKNOWN>";
     }
 }
