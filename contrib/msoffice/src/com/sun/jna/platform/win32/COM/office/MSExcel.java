@@ -78,7 +78,7 @@ public class MSExcel extends COMLateBindingObject {
                 VARIANT_MISSING, // Converter
                 VARIANT_MISSING, // AddToMru
                 VARIANT_MISSING, // Local
-                new VARIANT(0) // CorruptLoad
+                new VARIANT(1) // CorruptLoad
         });
     }
 
